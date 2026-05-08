@@ -71,6 +71,8 @@ Only roles with `edit_themes` (Administrator on a single site, Super Admin on mu
 
 The editor is also disabled on production environments. The menu is hidden whenever `wp_get_environment_type()` returns `production`; the REST endpoints reject every request from those environments. Use it on `local`, `development`, or `staging`.
 
+If the site sets `DISALLOW_FILE_EDIT` to `true` in `wp-config.php`, the editor will not be available. WordPress maps `edit_themes` to `do_not_allow` whenever that constant is on, which intentionally locks the plugin (and core's Theme/Plugin file editors) out.
+
 ## Admin Colour Scheme
 
 Every accent colour in the editor (button background, link colour, list-active surface, badge background, focus ring, checkbox colour) is routed through `--wp-admin-theme-color` and its `-darker-10` shade exposed by `@wordpress/components`. Switching the user's admin colour scheme (Profile → Admin Color Scheme) changes the editor's accent automatically.
