@@ -1,0 +1,36 @@
+{
+  "name": "wp-theme-json-editor",
+  "version": "1.0.0",
+  "description": "A form-driven visual editor for WordPress theme.json files.",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "lint:js": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+  },
+  "dependencies": {
+    "@s3rgiosan/theme-json-editor-ui": "https://github.com/s3rgiosan/vscode-wp-theme-json-editor/releases/download/1.2.0/theme-json-editor-ui-1.2.0.tgz",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/wordpress__api-fetch": "^3.2.4",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "cssnano": "^7.1.9",
+    "eslint": "^10.3.0",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^5.4.0"
+  }
+}

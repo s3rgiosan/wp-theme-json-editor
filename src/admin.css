@@ -1,0 +1,184 @@
+.appearance_page_wp-theme-json-editor #wpcontent {
+	padding: 0;
+}
+
+/*
+ * Warning banner.
+
+ * Avoids WP admin's `.notice` class on purpose — core's common.js
+ * auto-relocates `.notice` elements next to the first heading and
+ * would shove it into the Toolbar's flex row.
+ */
+.appearance_page_wp-theme-json-editor .wptje-admin-notice {
+	margin: 0;
+	padding: 12px 20px;
+	background: #fcf9e8;
+	border-bottom: 1px solid #dba617;
+	color: #1d2327;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.appearance_page_wp-theme-json-editor .wptje-admin-notice p {
+	margin: 0;
+}
+
+.appearance_page_wp-theme-json-editor .wptje-admin-notice strong {
+	color: #996800;
+}
+
+#wp-theme-json-editor-root > .h-screen {
+	height: auto;
+	min-height: 0;
+}
+
+#wp-theme-json-editor-root > .h-screen > .flex.flex-1.overflow-hidden {
+	overflow: visible;
+}
+
+#wp-theme-json-editor-root main.overflow-y-auto {
+	overflow: visible;
+}
+
+#wp-theme-json-editor-root {
+	/* Surfaces */
+	--tje-bg: #ffffff;
+	--tje-fg: #1d2327;
+	--tje-disabled-fg: #a7aaad;
+	--tje-sidebar-bg: #ffffff;
+	--tje-panel-border: #c3c4c7;
+
+	/* Inputs */
+	--tje-input-bg: #ffffff;
+	--tje-input-fg: #2c3338;
+	--tje-input-border: #8c8f94;
+	--tje-input-placeholder: #757575;
+
+	--tje-input-error-bg: #fcf0f1;
+	--tje-input-error-border: #d63638;
+	--tje-input-error-fg: #d63638;
+	--tje-input-warning-bg: #fcf9e8;
+	--tje-input-warning-border: #dba617;
+	--tje-input-warning-fg: #996800;
+
+	/* Buttons (primary follows the user's admin colour scheme). */
+	--tje-button-bg: var(--wp-admin-theme-color, #2271b1);
+	--tje-button-fg: #ffffff;
+	--tje-button-hover: var(--wp-admin-theme-color-darker-10, #135e96);
+	--tje-button-secondary-bg: #f6f7f7;
+	--tje-button-secondary-fg: var(--wp-admin-theme-color, #2271b1);
+	--tje-button-secondary-border: var(--wp-admin-theme-color, #2271b1);
+	--tje-button-secondary-bg-hover: #f0f0f1;
+	--tje-button-secondary-fg-hover: var(--wp-admin-theme-color-darker-10, #135e96);
+	--tje-button-secondary-border-hover: var(--wp-admin-theme-color-darker-10, #135e96);
+
+	/* Dropdowns */
+	--tje-dropdown-bg: #ffffff;
+	--tje-dropdown-fg: #2c3338;
+	--tje-dropdown-border: #8c8f94;
+
+	/* Checkboxes */
+	--tje-checkbox-bg: #ffffff;
+	--tje-checkbox-fg: var(--wp-admin-theme-color, #2271b1);
+	--tje-checkbox-border: #8c8f94;
+
+	/* Lists / nav */
+	--tje-list-hover: #f0f0f1;
+	--tje-list-hover-fg: #1d2327;
+	--tje-list-active-bg: var(--wp-admin-theme-color, #2271b1);
+	--tje-list-active-fg: #ffffff;
+
+	/* Badges */
+	--tje-badge-bg: var(--wp-admin-theme-color, #2271b1);
+	--tje-badge-fg: #ffffff;
+
+	/* Status */
+	--tje-error-fg: #d63638;
+	--tje-warning-fg: #996800;
+
+	/* Helper / link text */
+	--tje-description-fg: #50575e;
+	--tje-link-fg: var(--wp-admin-theme-color, #2271b1);
+	--tje-link-active-fg: var(--wp-admin-theme-color-darker-10, #135e96);
+
+	/* Focus ring */
+	--tje-focus-border: var(--wp-admin-theme-color, #2271b1);
+	--tje-contrast-border: #1d2327;
+
+	/* Breadcrumbs */
+	--tje-breadcrumb-fg: #50575e;
+	--tje-breadcrumb-active-fg: #1d2327;
+
+	/* Scrollbar */
+	--tje-scrollbar-bg: #c3c4c7;
+	--tje-scrollbar-hover-bg: #8c8f94;
+
+	/* Typography */
+	--tje-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--tje-font-size: 14px;
+	--tje-mono-font-size: 14px;
+	--tje-mono-font-family: Menlo, Consolas, monaco, monospace;
+}
+
+/* Avoid wp-admin's `.wrap` h1 reset distorting our shell. */
+#wp-theme-json-editor-root {
+	margin: 0;
+}
+
+#wp-theme-json-editor-root input[type="checkbox"],
+#wp-theme-json-editor-root input[type="radio"] {
+	margin: 0 !important;
+}
+
+/*
+ * `wp-admin/css/common.css` adds `li, dd { margin-bottom: 6px }`
+ * which fights the package's `space-y-*` utilities. Reset inside
+ * the editor — the package controls all vertical rhythm itself.
+ */
+#wp-theme-json-editor-root li,
+#wp-theme-json-editor-root dd {
+	margin-bottom: 0;
+}
+
+/*
+ * Radio inputs match WP admin's native styling
+ * (wp-admin/css/forms.css).
+ */
+#wp-theme-json-editor-root input[type="radio"] {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	width: 1rem !important;
+	height: 1rem !important;
+	min-width: 1rem;
+	border: 1px solid #8c8f94 !important;
+	border-radius: 50% !important;
+	background: #fff !important;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+	padding: 0 !important;
+	cursor: pointer;
+	display: inline-block;
+	vertical-align: middle;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+#wp-theme-json-editor-root input[type="radio"]:checked {
+	border-color: var(--wp-admin-theme-color, #2271b1) !important;
+}
+
+#wp-theme-json-editor-root input[type="radio"]:focus-visible {
+	border-color: var(--wp-admin-theme-color, #2271b1) !important;
+	box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
+	outline: 2px solid transparent;
+}
+
+#wp-theme-json-editor-root input[type="radio"]:checked::before {
+	content: "";
+	display: block;
+	float: left;
+	width: 0.5rem;
+	height: 0.5rem;
+	margin: 0.1875rem;
+	border-radius: 50%;
+	background-color: #50575e;
+}
