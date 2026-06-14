@@ -10,6 +10,7 @@ declare global {
 			wpVersion: string;
 			caps: { edit_themes: boolean; edit_theme_options: boolean };
 			defaultMode: "theme" | "user";
+			files: { id: string; title: string; indent: boolean }[];
 		};
 	}
 }

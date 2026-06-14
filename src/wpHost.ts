@@ -5,19 +5,27 @@ import type {
 	HostMode,
 } from "@s3rgiosan/theme-json-editor-ui";
 
+interface ThemeFile {
+	id: string;
+	title: string;
+	indent: boolean;
+}
+
 interface BootData {
 	restNamespace: string;
 	rootId: string;
 	wpVersion: string;
 	caps: { edit_themes: boolean; edit_theme_options: boolean };
 	defaultMode: "theme" | "user";
+	files: ThemeFile[];
 }
 
 interface DocumentResponse {
 	data: Record<string, unknown>;
 	etag: string;
-	mode: "theme" | "user";
+	mode: string;
 	path?: string;
+	id?: string;
 	post_id?: number;
 }
 
@@ -38,6 +46,9 @@ interface ConflictBody {
 	data: { status: number; server_etag: string; server_data: Record<string, unknown> };
 }
 
+/** Sentinel target id for the user-level wp_global_styles document. */
+const USER_TARGET = "user";
+
 /**
  * HostAdapter implementation backed by the WP REST API.
  *
@@ -46,25 +57,46 @@ interface ConflictBody {
  * responses are surfaced via `onConflict` so the existing
  * ConflictBanner renders.
  *
- * Exposes the two editing modes (`theme` / `user`) through the
- * `modes` / `getMode` / `setMode` HostAdapter hooks so the Toolbar
- * renders a switcher.
+ * Editing targets are addressed by id: every theme file reported in
+ * `boot.files` (the root `theme.json` and its `styles/*.json` style
+ * variations) plus, when enabled, the user-level global styles. The
+ * `modes` / `getMode` / `setMode` HostAdapter hooks drive the editor's
+ * file picker.
  */
 export function createWpHost(boot: BootData): HostAdapter {
-	let mode: "theme" | "user" = boot.defaultMode;
+	let target =
+		boot.defaultMode === USER_TARGET
+			? USER_TARGET
+			: (boot.files[0]?.id ?? "theme.json");
 	let etag = "";
 	let listener: HostEvents = {};
 	let modeSwapInFlight = false;
 
-	const path = (suffix: string) =>
-		`/${boot.restNamespace}${suffix}`;
+	const path = (suffix: string) => `/${boot.restNamespace}${suffix}`;
+
+	// Map a target id to the REST `mode`/`file` params. The user document
+	// is a distinct mode; every other id is a theme file addressed by path.
+	const requestParams = (id: string): { mode: string; file?: string } =>
+		id === USER_TARGET ? { mode: USER_TARGET } : { mode: "file", file: id };
+
+	const documentQuery = (id: string) => {
+		const params = requestParams(id);
+		const query = new URLSearchParams({ mode: params.mode });
+		if (params.file !== undefined) {
+			query.set("file", params.file);
+		}
+		return `/document?${query.toString()}`;
+	};
 
 	async function loadDocument() {
 		const doc = await apiFetch<DocumentResponse>({
-			path: path(`/document?mode=${mode}`),
+			path: path(documentQuery(target)),
 		});
 		etag = doc.etag;
-		listener.onInit?.(doc.data, doc.path ?? `wp_global_styles#${doc.post_id ?? 0}`);
+		listener.onInit?.(
+			doc.data,
+			doc.path ?? `wp_global_styles#${doc.post_id ?? 0}`,
+		);
 	}
 
 	async function loadSchema() {
@@ -80,23 +112,22 @@ export function createWpHost(boot: BootData): HostAdapter {
 	}
 
 	const buildModes = (): HostMode[] => {
-		const list: HostMode[] = [
-			{
-				id: "theme",
-				label: "Theme file",
-				disabled: !boot.caps.edit_themes,
-				disabledReason: boot.caps.edit_themes
-					? undefined
-					: "Requires the `edit_themes` capability and a writable theme.json.",
-			},
-		];
+		const list: HostMode[] = boot.files.map((file) => ({
+			id: file.id,
+			label: file.title,
+			indent: file.indent,
+			disabled: !boot.caps.edit_themes,
+			disabledReason: boot.caps.edit_themes
+				? undefined
+				: "Requires the `edit_themes` capability and a writable theme file.",
+		}));
 
 		// Only expose the user-styles mode when the server enabled it
 		// via filter — boot.caps.edit_theme_options is gated by the
 		// feature flag, not just the raw capability check.
 		if (boot.caps.edit_theme_options) {
 			list.push({
-				id: "user",
+				id: USER_TARGET,
 				label: "User Global Styles",
 				disabled: false,
 			});
@@ -104,6 +135,9 @@ export function createWpHost(boot: BootData): HostAdapter {
 
 		return list;
 	};
+
+	const isKnownTarget = (id: string) =>
+		buildModes().some((mode) => mode.id === id && !mode.disabled);
 
 	return {
 		start(events) {
@@ -116,7 +150,7 @@ export function createWpHost(boot: BootData): HostAdapter {
 
 		async save(data) {
 			// A mode swap is in flight — the editor's currently
-			// loaded data may not match the active mode yet. Drop
+			// loaded data may not match the active target yet. Drop
 			// the save instead of writing a stale document.
 			if (modeSwapInFlight) {
 				console.warn("[wpHost] save skipped: mode swap in progress");
@@ -124,9 +158,9 @@ export function createWpHost(boot: BootData): HostAdapter {
 			}
 			try {
 				const res = await apiFetch<DocumentResponse>({
-					path: path(`/document?mode=${mode}`),
+					path: path("/document"),
 					method: "POST",
-					data: { data, etag, mode },
+					data: { data, etag, ...requestParams(target) },
 				});
 				etag = res.etag;
 				listener.onSaved?.();
@@ -148,27 +182,24 @@ export function createWpHost(boot: BootData): HostAdapter {
 		modes: buildModes,
 
 		getMode() {
-			return mode;
+			return target;
 		},
 
 		async setMode(next) {
-			if (next !== "theme" && next !== "user") {
-				return;
-			}
-			if (next === mode || modeSwapInFlight) {
+			if (next === target || modeSwapInFlight || !isKnownTarget(next)) {
 				return;
 			}
 
-			const previousMode = mode;
+			const previousTarget = target;
 			const previousEtag = etag;
-			mode = next;
+			target = next;
 			modeSwapInFlight = true;
 			try {
 				await loadDocument();
 			} catch (err) {
-				// Roll back so the UI's mode selector lines up with
+				// Roll back so the UI's file picker lines up with
 				// the data the editor is actually showing.
-				mode = previousMode;
+				target = previousTarget;
 				etag = previousEtag;
 				console.error("[wpHost] setMode failed; reverted", err);
 				throw err;

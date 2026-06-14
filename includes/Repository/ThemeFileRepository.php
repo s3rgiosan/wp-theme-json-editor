@@ -1,6 +1,6 @@
 <?php
 /**
- * File-based theme.json repository.
+ * File-based theme JSON repository.
  *
  * @package S3S\WP\ThemeJSONEditor\Repository
  */
@@ -8,29 +8,69 @@
 namespace S3S\WP\ThemeJSONEditor\Repository;
 
 /**
- * Reads and writes the active theme's `theme.json` from disk via
- * `WP_Filesystem`. Implements optimistic concurrency via an mtime+size
- * etag — saves whose etag has drifted return a 409 with the current
- * server-side payload so the UI can show a conflict banner.
+ * Reads and writes the active theme's `theme.json` and its style
+ * variations (`styles/*.json`) from disk via `WP_Filesystem`.
+ *
+ * Files are addressed by a stable id — `theme.json` for the root file
+ * and the `styles/`-relative path for variations (e.g.
+ * `styles/dark.json`). Ids are never concatenated into a path: every id
+ * is resolved against a map built by scanning the theme directories, so
+ * a request can only ever reach a real file inside the active (or
+ * parent) theme. Discovery mirrors core's
+ * `WP_Theme_JSON_Resolver::get_style_variations()` — the `styles/`
+ * directory is scanned recursively and child-theme files win over the
+ * parent on matching relative paths.
+ *
+ * Implements optimistic concurrency via an mtime+size etag — saves whose
+ * etag has drifted return a 409 with the current server-side payload so
+ * the UI can show a conflict banner.
  */
 class ThemeFileRepository {
 
 	/**
-	 * Read theme.json from the active theme.
+	 * Id of the theme's root `theme.json` file.
 	 *
-	 * Falls back to the parent theme's theme.json if the child theme
-	 * doesn't ship one.
-	 *
-	 * @return array{data: array, etag: string, path: string}|\WP_Error
+	 * @var string
 	 */
-	public function read() {
+	const THEME_JSON_ID = 'theme.json';
 
-		$path = $this->resolve_path();
+	/**
+	 * List the editable theme JSON files in the active theme.
+	 *
+	 * Returns `theme.json` first, then style variations. Each entry is
+	 * suitable for building the editor's file picker.
+	 *
+	 * @return array<int, array{id: string, title: string, indent: bool}>
+	 */
+	public function list() {
+
+		$items = [];
+
+		foreach ( $this->discover() as $id => $path ) {
+			$items[] = [
+				'id'     => $id,
+				'title'  => $this->title_for( $id, $path ),
+				'indent' => self::THEME_JSON_ID !== $id,
+			];
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Read a theme JSON file by id.
+	 *
+	 * @param  string $id File id (`theme.json` or a `styles/`-relative path).
+	 * @return array{data: array, etag: string, path: string, id: string}|\WP_Error
+	 */
+	public function read( $id = self::THEME_JSON_ID ) {
+
+		$path = $this->resolve( $id );
 
 		if ( null === $path ) {
 			return new \WP_Error(
-				'wptje_theme_json_unreadable',
-				__( 'theme.json could not be read from the active theme.', 'wp-theme-json-editor' ),
+				'wptje_file_not_found',
+				__( 'The requested theme file could not be found.', 'wp-theme-json-editor' ),
 				[ 'status' => 404 ]
 			);
 		}
@@ -39,8 +79,8 @@ class ThemeFileRepository {
 
 		if ( ! $filesystem || ! $filesystem->is_readable( $path ) ) {
 			return new \WP_Error(
-				'wptje_theme_json_unreadable',
-				__( 'theme.json could not be read from the active theme.', 'wp-theme-json-editor' ),
+				'wptje_file_unreadable',
+				__( 'The requested theme file could not be read.', 'wp-theme-json-editor' ),
 				[ 'status' => 404 ]
 			);
 		}
@@ -49,8 +89,8 @@ class ThemeFileRepository {
 
 		if ( false === $contents ) {
 			return new \WP_Error(
-				'wptje_theme_json_read_failed',
-				__( 'Failed to read theme.json from disk.', 'wp-theme-json-editor' ),
+				'wptje_file_read_failed',
+				__( 'Failed to read the theme file from disk.', 'wp-theme-json-editor' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -59,10 +99,10 @@ class ThemeFileRepository {
 
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return new \WP_Error(
-				'wptje_theme_json_invalid',
+				'wptje_file_invalid',
 				sprintf(
 					/* translators: %s: JSON error message. */
-					__( 'theme.json is not valid JSON: %s', 'wp-theme-json-editor' ),
+					__( 'The theme file is not valid JSON: %s', 'wp-theme-json-editor' ),
 					json_last_error_msg()
 				),
 				[ 'status' => 422 ]
@@ -73,17 +113,19 @@ class ThemeFileRepository {
 			'data' => $decoded,
 			'etag' => $this->etag_for( $path ),
 			'path' => str_replace( ABSPATH, '', $path ),
+			'id'   => $id,
 		];
 	}
 
 	/**
-	 * Write theme.json to the active theme.
+	 * Write a theme JSON file by id.
 	 *
+	 * @param  string $id   File id (`theme.json` or a `styles/`-relative path).
 	 * @param  array  $data Decoded theme.json data.
 	 * @param  string $etag Client's last-known etag for optimistic concurrency.
-	 * @return array{etag: string}|\WP_Error
+	 * @return array{etag: string, id: string}|\WP_Error
 	 */
-	public function write( array $data, $etag = '' ) {
+	public function write( $id, array $data, $etag = '' ) {
 
 		if ( ! current_user_can( 'edit_themes' ) ) {
 			return new \WP_Error(
@@ -103,10 +145,27 @@ class ThemeFileRepository {
 			);
 		}
 
-		$path = $this->resolve_path();
+		$path = $this->resolve( $id );
 
+		// The root theme.json may be created when the theme ships without
+		// one. Style variations must already exist on disk to be editable.
 		if ( null === $path ) {
+			if ( self::THEME_JSON_ID !== $id ) {
+				return new \WP_Error(
+					'wptje_file_not_found',
+					__( 'The requested theme file could not be found.', 'wp-theme-json-editor' ),
+					[ 'status' => 404 ]
+				);
+			}
 			$path = trailingslashit( get_stylesheet_directory() ) . 'theme.json';
+		}
+
+		if ( ! $this->is_allowed_path( $path ) ) {
+			return new \WP_Error(
+				'wptje_forbidden',
+				__( 'Refusing to write outside the active theme.', 'wp-theme-json-editor' ),
+				[ 'status' => 403 ]
+			);
 		}
 
 		if ( $filesystem->exists( $path ) ) {
@@ -116,7 +175,7 @@ class ThemeFileRepository {
 				$decoded = false !== $current ? json_decode( $current, true ) : null;
 				return new \WP_Error(
 					'wptje_etag_conflict',
-					__( 'theme.json was modified externally since you loaded it.', 'wp-theme-json-editor' ),
+					__( 'The theme file was modified externally since you loaded it.', 'wp-theme-json-editor' ),
 					[
 						'status'      => 409,
 						'server_etag' => $current_etag,
@@ -129,7 +188,7 @@ class ThemeFileRepository {
 		if ( $filesystem->exists( $path ) && ! $filesystem->is_writable( $path ) ) {
 			return new \WP_Error(
 				'wptje_not_writable',
-				__( 'theme.json is not writable. Check filesystem permissions.', 'wp-theme-json-editor' ),
+				__( 'The theme file is not writable. Check filesystem permissions.', 'wp-theme-json-editor' ),
 				[ 'status' => 403 ]
 			);
 		}
@@ -139,7 +198,7 @@ class ThemeFileRepository {
 		if ( false === $encoded ) {
 			return new \WP_Error(
 				'wptje_encode_failed',
-				__( 'Failed to encode theme.json payload.', 'wp-theme-json-editor' ),
+				__( 'Failed to encode the theme file payload.', 'wp-theme-json-editor' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -149,7 +208,7 @@ class ThemeFileRepository {
 		if ( ! $written ) {
 			return new \WP_Error(
 				'wptje_write_failed',
-				__( 'Failed to write theme.json to disk.', 'wp-theme-json-editor' ),
+				__( 'Failed to write the theme file to disk.', 'wp-theme-json-editor' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -158,7 +217,96 @@ class ThemeFileRepository {
 
 		return [
 			'etag' => $this->etag_for( $path ),
+			'id'   => $id,
 		];
+	}
+
+	/**
+	 * Resolve a file id to an absolute path.
+	 *
+	 * Only ids present in the discovered file map resolve; everything
+	 * else returns null. This is the allowlist that prevents path
+	 * traversal — the id is a map key, never a path fragment.
+	 *
+	 * @param  string $id File id.
+	 * @return string|null Absolute path or null when the id is unknown.
+	 */
+	protected function resolve( $id ) {
+
+		$files = $this->discover();
+
+		return $files[ $id ] ?? null;
+	}
+
+	/**
+	 * Discover the editable theme JSON files.
+	 *
+	 * Builds an ordered map of `id => absolute path`: `theme.json` first
+	 * (child theme preferred, falling back to the parent), then style
+	 * variations found by recursively scanning the `styles/` directory of
+	 * the child and parent themes. Child files win over parent files on a
+	 * matching relative id.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function discover() {
+
+		$map = [];
+
+		$theme_json = $this->resolve_theme_json_path();
+		if ( null !== $theme_json ) {
+			$map[ self::THEME_JSON_ID ] = $theme_json;
+		}
+
+		$variations = [];
+
+		$base_dirs = [
+			get_stylesheet_directory(),
+			get_template_directory(),
+		];
+
+		foreach ( $base_dirs as $base ) {
+			$styles_dir = trailingslashit( $base ) . 'styles';
+			if ( ! is_dir( $styles_dir ) ) {
+				continue;
+			}
+			$prefix_length = strlen( trailingslashit( $styles_dir ) );
+			foreach ( $this->iterate_json_files( $styles_dir ) as $absolute ) {
+				$relative = 'styles/' . str_replace( '\\', '/', substr( $absolute, $prefix_length ) );
+				// First writer wins; the stylesheet (child) directory is
+				// scanned before the template (parent) directory.
+				if ( ! isset( $variations[ $relative ] ) ) {
+					$variations[ $relative ] = $absolute;
+				}
+			}
+		}
+
+		ksort( $variations );
+
+		return $map + $variations;
+	}
+
+	/**
+	 * Recursively collect `*.json` file paths within a directory.
+	 *
+	 * @param  string $dir Absolute directory path.
+	 * @return array<int, string> Absolute file paths.
+	 */
+	protected function iterate_json_files( $dir ) {
+
+		$files = [];
+
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && 0 === strcasecmp( $file->getExtension(), 'json' ) ) {
+				$files[] = $file->getPathname();
+			}
+		}
+
+		return $files;
 	}
 
 	/**
@@ -168,7 +316,7 @@ class ThemeFileRepository {
 	 *
 	 * @return string|null Absolute path or null when neither theme has the file.
 	 */
-	protected function resolve_path() {
+	protected function resolve_theme_json_path() {
 
 		$candidates = [
 			trailingslashit( get_stylesheet_directory() ) . 'theme.json',
@@ -182,6 +330,61 @@ class ThemeFileRepository {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Derive a display title for a file.
+	 *
+	 * Uses the variation's `title` when present, otherwise the basename.
+	 * The root file is always labelled `theme.json`.
+	 *
+	 * @param  string $id   File id.
+	 * @param  string $path Absolute path.
+	 * @return string
+	 */
+	protected function title_for( $id, $path ) {
+
+		if ( self::THEME_JSON_ID === $id ) {
+			return self::THEME_JSON_ID;
+		}
+
+		$contents = is_readable( $path ) ? file_get_contents( $path ) : false; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$decoded  = is_string( $contents ) ? json_decode( $contents, true ) : null;
+
+		if ( is_array( $decoded ) && ! empty( $decoded['title'] ) && is_string( $decoded['title'] ) ) {
+			return $decoded['title'];
+		}
+
+		return basename( $path );
+	}
+
+	/**
+	 * Whether an absolute path is a `.json` file inside the active or
+	 * parent theme directory. Defence-in-depth for the write path.
+	 *
+	 * @param  string $path Absolute path.
+	 * @return bool
+	 */
+	protected function is_allowed_path( $path ) {
+
+		$normalized = wp_normalize_path( $path );
+
+		if ( 0 !== strcasecmp( substr( $normalized, -5 ), '.json' ) ) {
+			return false;
+		}
+
+		$roots = [
+			wp_normalize_path( get_stylesheet_directory() ),
+			wp_normalize_path( get_template_directory() ),
+		];
+
+		foreach ( $roots as $root ) {
+			if ( str_starts_with( $normalized, trailingslashit( $root ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -211,7 +414,7 @@ class ThemeFileRepository {
 	/**
 	 * Build an etag from the file's mtime + size.
 	 *
-	 * @param  string $path Absolute path to theme.json.
+	 * @param  string $path Absolute path.
 	 * @return string
 	 */
 	protected function etag_for( $path ) {
