@@ -2,6 +2,8 @@
 
 > A form-driven visual editor for WordPress theme.json files.
 
+[![Try in WordPress Playground](https://img.shields.io/badge/Try%20in-WordPress%20Playground-3858E9?logo=wordpress&logoColor=white)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/s3rgiosan/wp-theme-json-editor/main/.wp-playground/blueprint.json)
+
 > [!WARNING]
 >
 > This is a developer tool. It writes the active theme's `theme.json` directly to disk via `WP_Filesystem`.

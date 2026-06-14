@@ -1,0 +1,24 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/?playground_demo=1",
+  "preferredVersions": { "php": "8.3", "wp": "latest" },
+  "login": true,
+  "steps": [
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/mu-plugins/playground-demo.php",
+      "data": "<?php\nadd_filter('wp_theme_json_editor_block_environment', '__return_false');\nadd_action('template_redirect', function () {\n    if (empty($_GET['playground_demo'])) {\n        return;\n    }\n    wp_safe_redirect(admin_url('themes.php?page=wp-theme-json-editor'));\n    exit;\n});\n"
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "git:directory",
+        "url": "https://github.com/s3rgiosan/wp-theme-json-editor",
+        "ref": "main",
+        "refType": "branch",
+        "path": "/"
+      },
+      "options": { "activate": true }
+    }
+  ]
+}
