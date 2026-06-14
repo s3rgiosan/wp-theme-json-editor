@@ -6,6 +6,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Edit a theme's style variations (`styles/*.json`) alongside its root `theme.json`, via a file switcher that lists every variation found on disk.
+- "Try in WordPress Playground" README button backed by `.wp-playground/blueprint.json`, which boots the demo straight into the **Appearance → Theme JSON Editor** screen.
+
 ## [1.0.0] - 2026-05-08
 
 Initial release.

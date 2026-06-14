@@ -20,11 +20,16 @@ use S3S\WP\ThemeJSONEditor\Schema\Loader as SchemaLoader;
  * - `GET  /document` — current theme.json or user global styles.
  * - `POST /document` — saves theme.json or user global styles.
  *
- * The mode argument (`theme` | `user`) selects between the file-based
- * theme.json and the user-level wp_global_styles CPT. Capability checks
- * happen at the permission_callback level so unauthorised requests are
- * rejected before reaching the repositories. The save endpoint also
- * caps payload size at `MAX_PAYLOAD_BYTES`.
+ * The mode argument selects the editing target:
+ *
+ * - `theme` — the active theme's root `theme.json` (default).
+ * - `file`  — a specific theme JSON file (root or a `styles/*.json`
+ *             style variation), addressed by the `file` argument.
+ * - `user`  — the user-level `wp_global_styles` CPT.
+ *
+ * Capability checks happen at the permission_callback level so
+ * unauthorised requests are rejected before reaching the repositories.
+ * The save endpoint also caps payload size at `MAX_PAYLOAD_BYTES`.
  */
 class Controller {
 
@@ -144,7 +149,7 @@ class Controller {
 
 		$mode = $request->get_param( 'mode' );
 
-		if ( 'theme' === $mode ) {
+		if ( 'theme' === $mode || 'file' === $mode ) {
 			if ( ! current_user_can( 'edit_themes' ) ) {
 				return new \WP_Error(
 					'wptje_forbidden',
@@ -214,9 +219,9 @@ class Controller {
 			);
 		}
 
-		$result = 'theme' === $mode
-			? ( new ThemeFileRepository() )->read()
-			: ( new GlobalStylesRepository() )->read();
+		$result = 'user' === $mode
+			? ( new GlobalStylesRepository() )->read()
+			: ( new ThemeFileRepository() )->read( $this->file_id( $request ) );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -265,9 +270,9 @@ class Controller {
 			return $shape_error;
 		}
 
-		$result = 'theme' === $mode
-			? ( new ThemeFileRepository() )->write( $data, $etag )
-			: ( new GlobalStylesRepository() )->write( $data, $etag );
+		$result = 'user' === $mode
+			? ( new GlobalStylesRepository() )->write( $data, $etag )
+			: ( new ThemeFileRepository() )->write( $this->file_id( $request ), $data, $etag );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -347,10 +352,38 @@ class Controller {
 		return [
 			'mode' => [
 				'type'              => 'string',
-				'enum'              => [ 'theme', 'user' ],
+				'enum'              => [ 'theme', 'user', 'file' ],
 				'default'           => 'theme',
 				'sanitize_callback' => 'sanitize_text_field',
 			],
+			'file' => [
+				'type'              => 'string',
+				'default'           => '',
+				'sanitize_callback' => 'sanitize_text_field',
+			],
 		];
+	}
+
+	/**
+	 * Resolve the theme file id for the current request.
+	 *
+	 * `theme` mode is an alias for the root `theme.json`. `file` mode
+	 * carries the target id in the `file` argument, defaulting to the
+	 * root file when empty. The id is validated against the repository's
+	 * allowlist downstream, so an unknown id yields a 404 rather than a
+	 * path traversal.
+	 *
+	 * @param  \WP_REST_Request $request Request.
+	 * @return string
+	 */
+	protected function file_id( $request ) {
+
+		if ( 'file' !== $request->get_param( 'mode' ) ) {
+			return ThemeFileRepository::THEME_JSON_ID;
+		}
+
+		$file = (string) $request->get_param( 'file' );
+
+		return '' !== $file ? $file : ThemeFileRepository::THEME_JSON_ID;
 	}
 }

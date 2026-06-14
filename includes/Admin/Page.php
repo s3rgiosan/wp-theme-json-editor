@@ -8,6 +8,7 @@
 namespace S3S\WP\ThemeJSONEditor\Admin;
 
 use S3S\WP\ThemeJSONEditor\Plugin;
+use S3S\WP\ThemeJSONEditor\Repository\ThemeFileRepository;
 use S3S\WP\ThemeJSONEditor\REST\Controller as RESTController;
 
 /**
@@ -125,6 +126,7 @@ class Page {
 		$theme_writable     = current_user_can( 'edit_themes' ) && wp_is_writable( get_stylesheet_directory() . '/theme.json' );
 		$global_styles_mode = Plugin::is_global_styles_mode_enabled() && current_user_can( 'edit_theme_options' );
 		$default_mode       = $theme_writable ? 'theme' : ( $global_styles_mode ? 'user' : 'theme' );
+		$theme_files        = current_user_can( 'edit_themes' ) ? ( new ThemeFileRepository() )->list() : [];
 
 		wp_add_inline_script(
 			'wp-theme-json-editor',
@@ -140,6 +142,7 @@ class Page {
 							'edit_theme_options' => $global_styles_mode,
 						],
 						'defaultMode'   => $default_mode,
+						'files'         => $theme_files,
 						'user'          => [
 							'id'    => (int) $user->ID,
 							'login' => $user->user_login,
