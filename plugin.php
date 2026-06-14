@@ -5,7 +5,7 @@
  * Plugin URI:        https://github.com/s3rgiosan/wp-theme-json-editor
  * Requires at least: 6.7
  * Requires PHP:      8.1
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Sérgio Santos
  * Author URI:        https://s3rgiosan.dev/?utm_source=wp-plugins&utm_medium=wp-theme-json-editor&utm_campaign=author-uri
  * License:           GPL-3.0-only
@@ -25,7 +25,7 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-define( 'S3S_THEME_JSON_EDITOR_VERSION', '1.0.0' );
+define( 'S3S_THEME_JSON_EDITOR_VERSION', '1.1.0' );
 define( 'S3S_THEME_JSON_EDITOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'S3S_THEME_JSON_EDITOR_URL', plugin_dir_url( __FILE__ ) );
 define( 'S3S_THEME_JSON_EDITOR_BASENAME', plugin_basename( __FILE__ ) );

@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-14
+
 ### Added
 
 - Edit a theme's style variations (`styles/*.json`) alongside its root `theme.json`, via a file switcher that lists every variation found on disk.
@@ -15,5 +17,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Initial release.
 
-[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/s3rgiosan/wp-theme-json-editor/releases/tag/1.0.0
