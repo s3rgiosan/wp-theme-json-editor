@@ -4,8 +4,6 @@
 .claude
 node_modules/
 .node_history
-package-lock.json
-**/package-lock.json
 .playwright-mcp/
 *.result.cache
 
