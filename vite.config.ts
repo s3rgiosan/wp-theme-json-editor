@@ -2,11 +2,20 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import postcss from "postcss";
 import cssnano from "cssnano";
 
 const require = createRequire(import.meta.url);
+
+/**
+ * Short content hash used as a `.asset.php` version, so the version only
+ * changes when the built file does.
+ */
+function contentHash(content: string | Buffer): string {
+	return createHash("sha256").update(content).digest("hex").slice(0, 20);
+}
 
 /**
  * Mirror the linked package's schema assets into the plugin's
@@ -37,7 +46,7 @@ function copySchemaAssetsPlugin(): Plugin {
 /**
  * Minify the static admin-theme stylesheet via cssnano and emit it
  * alongside a WP-style `.asset.php` descriptor (with version derived
- * from the source file's mtime).
+ * from the minified stylesheet's content).
  */
 function adminStylesheetPlugin(): Plugin {
 	return {
@@ -51,7 +60,7 @@ function adminStylesheetPlugin(): Plugin {
 			mkdirSync(outDir, { recursive: true });
 			writeFileSync(resolve(outDir, "admin.css"), minified.css);
 
-			const version = Math.floor(statSync(sourcePath).mtimeMs).toString();
+			const version = contentHash(minified.css);
 			const php = `<?php return array('dependencies' => array('wp-components'), 'version' => '${version}');\n`;
 			writeFileSync(resolve(outDir, "admin-style.asset.php"), php);
 		},
@@ -67,7 +76,9 @@ function adminScriptAssetPhpPlugin(): Plugin {
 		name: "wp-tje-admin-script-asset-php",
 		closeBundle() {
 			const deps = ["wp-api-fetch", "wp-i18n", "wp-components"];
-			const version = Date.now().toString();
+			const version = contentHash(
+				readFileSync(resolve(__dirname, "build/admin.js")),
+			);
 			const php = `<?php return array('dependencies' => array(${deps
 				.map((d) => `'${d}'`)
 				.join(", ")}), 'version' => '${version}');\n`;
