@@ -1,0 +1,73 @@
+name: Update UI Package
+
+on:
+  repository_dispatch:
+    types: [theme-json-editor-ui-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "theme-json-editor-ui release to install (e.g. 1.7.0)"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Update theme-json-editor-ui
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Resolve version
+        id: version
+        env:
+          VERSION: ${{ github.event.client_payload.version || inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: '$VERSION'" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Point dependency at the release tarball
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          npm pkg set "dependencies.@s3rgiosan/theme-json-editor-ui=https://github.com/s3rgiosan/vscode-wp-theme-json-editor/releases/download/${VERSION}/theme-json-editor-ui-${VERSION}.tgz"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint:js
+
+      - name: Build
+        run: npm run build
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/update-ui-${{ steps.version.outputs.version }}
+          commit-message: "chore: update theme-json-editor-ui to ${{ steps.version.outputs.version }}"
+          title: "chore: update theme-json-editor-ui to ${{ steps.version.outputs.version }}"
+          body: |
+            Updates `@s3rgiosan/theme-json-editor-ui` to [${{ steps.version.outputs.version }}](https://github.com/s3rgiosan/vscode-wp-theme-json-editor/releases/tag/${{ steps.version.outputs.version }}) and rebuilds `build/`.
+
+            Typecheck, lint, and build passed in the **Update UI Package** workflow. Check the release notes for breaking changes before merging.
+          add-paths: |
+            package.json
+            build
+          assignees: s3rgiosan
