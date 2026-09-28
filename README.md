@@ -87,7 +87,7 @@ All routes live under `wp-theme-json-editor/v1`. Auth follows the standard WordP
 
 ### `GET /schema`
 
-Returns the official WordPress `theme.json` schema and the bundled core-scan snapshot of experimental + undocumented properties.
+Returns the official WordPress `theme.json` schema and the bundled core-scan snapshot of supported + experimental properties. The editor flags supported properties the schema does not document as undocumented.
 
 **Query**
 

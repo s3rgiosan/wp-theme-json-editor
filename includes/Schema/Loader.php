@@ -11,7 +11,7 @@ namespace S3S\WP\ThemeJSONEditor\Schema;
  * Fetches the official WP theme.json schema from `schemas.wp.org`,
  * caches it in a 24h transient, and falls back to a bundled copy when
  * the network or cache is unavailable. Also exposes the bundled
- * core-scan snapshot (experimental + undocumented property paths
+ * core-scan snapshot (supported + experimental property paths
  * extracted from WP core source).
  *
  * The webview merges the raw schema and snapshot client-side in a
@@ -45,7 +45,7 @@ class Loader {
 
 	/**
 	 * Plugin-relative path to the core-scan snapshot listing
-	 * experimental and undocumented theme.json property paths.
+	 * supported and experimental theme.json property paths.
 	 *
 	 * @var string
 	 */
@@ -110,7 +110,7 @@ class Loader {
 				'generatedAt'  => '',
 				'wpVersion'    => '',
 				'experimental' => [],
-				'undocumented' => [],
+				'properties'   => [],
 			];
 		}
 
