@@ -35,7 +35,7 @@ interface SchemaResponse {
 		generatedAt: string;
 		wpVersion: string;
 		experimental: string[];
-		undocumented: string[];
+		properties: string[];
 	};
 	schemaVersion: string;
 }

@@ -6,6 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.0. The core-scan snapshot lists every supported theme.json property in `properties`, and the editor flags only those the loaded schema does not document as undocumented.
+
 ## [1.1.0] - 2026-06-14
 
 ### Added
