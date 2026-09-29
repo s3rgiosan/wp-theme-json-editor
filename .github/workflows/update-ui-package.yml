@@ -69,5 +69,6 @@ jobs:
             Typecheck, lint, and build passed in the **Update UI Package** workflow. Check the release notes for breaking changes before merging.
           add-paths: |
             package.json
+            package-lock.json
             build
           assignees: s3rgiosan
