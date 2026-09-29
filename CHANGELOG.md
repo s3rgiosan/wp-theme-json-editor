@@ -6,9 +6,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-29
+
 ### Changed
 
-- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.0. The core-scan snapshot lists every supported theme.json property in `properties`, and the editor flags only those the loaded schema does not document as undocumented.
+- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.1. The core-scan snapshot lists every supported theme.json property in `properties`, and the editor flags only those the loaded schema does not document as undocumented.
 
 ## [1.1.0] - 2026-06-14
 
@@ -21,6 +23,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Initial release.
 
-[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/s3rgiosan/wp-theme-json-editor/releases/tag/1.0.0
