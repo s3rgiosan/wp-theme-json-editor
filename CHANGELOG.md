@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-13
+
+### Changed
+
+- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.3 ([#8](https://github.com/s3rgiosan/wp-theme-json-editor/pull/8), [#9](https://github.com/s3rgiosan/wp-theme-json-editor/pull/9)).
+
+### Fixed
+
+- CSS variable names in autocomplete and in the preset preview match the names WordPress generates, so a font size slug `2xl` shows as `--wp--preset--font-size--2-xl`.
+- The preset preview shows duotone variable names with the slug as written in theme.json, such as `--wp--preset--duotone--blueOrange`.
+- The Vite build gives the same `build/admin.js` for the same input ([#10](https://github.com/s3rgiosan/wp-theme-json-editor/pull/10)).
+
 ## [1.2.0] - 2026-09-29
 
 ### Changed
@@ -23,7 +35,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Initial release.
 
-[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.0...HEAD
+[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.1...HEAD
+[1.2.1]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/s3rgiosan/wp-theme-json-editor/releases/tag/1.0.0
