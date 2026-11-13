@@ -98,6 +98,10 @@ export default defineConfig({
 		adminScriptAssetPhpPlugin(),
 	],
 	build: {
+		// Hoist all CommonJS modules. The default ("auto") wraps a module
+		// only when it sees a require cycle, and that check depends on
+		// transform order, so the same input can give a different bundle.
+		commonjsOptions: { strictRequires: false },
 		outDir: "build",
 		emptyOutDir: true,
 		manifest: false,
