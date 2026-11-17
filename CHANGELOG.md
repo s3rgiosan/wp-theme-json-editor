@@ -6,16 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.2.1] - 2026-11-13
+## [1.2.1] - 2026-11-17
 
 ### Changed
 
-- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.3 ([#8](https://github.com/s3rgiosan/wp-theme-json-editor/pull/8), [#9](https://github.com/s3rgiosan/wp-theme-json-editor/pull/9)).
+- Update `@s3rgiosan/theme-json-editor-ui` to 1.7.4 ([#8](https://github.com/s3rgiosan/wp-theme-json-editor/pull/8), [#9](https://github.com/s3rgiosan/wp-theme-json-editor/pull/9), [#11](https://github.com/s3rgiosan/wp-theme-json-editor/pull/11)).
+- The core-scan snapshot lists `styles.typography.textWrap` in `properties`.
 
 ### Fixed
 
 - CSS variable names in autocomplete and in the preset preview match the names WordPress generates, so a font size slug `2xl` shows as `--wp--preset--font-size--2-xl`.
 - The preset preview shows duotone variable names with the slug as written in theme.json, such as `--wp--preset--duotone--blueOrange`.
+- Autocomplete and the preset preview show no CSS variable name for a duotone preset set on a single block (`settings.blocks.<block>.color.duotone`), because WordPress declares duotone variables only for root presets.
 - The Vite build gives the same `build/admin.js` for the same input ([#10](https://github.com/s3rgiosan/wp-theme-json-editor/pull/10)).
 
 ## [1.2.0] - 2026-09-29
