@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-24
+
+### Changed
+
+- Update `@s3rgiosan/theme-json-editor-ui` to 1.8.0 ([#12](https://github.com/s3rgiosan/wp-theme-json-editor/pull/12)).
+- The core-scan snapshot lists `settings.transform.rotate` and `styles.transform.rotate` in `properties`, and records the type of each property in a new `types` map.
+
+### Fixed
+
+- Undocumented properties get the field that matches their type. Boolean settings such as `settings.transform.rotate` show a toggle, and properties that take an array, an object, or more than one type, such as `settings.typography.textShadowPresets`, show a JSON field.
+- `styles.transform` is available for each block and for block style variations. At the root of `styles`, it shows only in a style variation file with `blockTypes`.
+- Search no longer lists properties the editor hides.
+
 ## [1.2.1] - 2026-11-17
 
 ### Changed
@@ -37,7 +50,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Initial release.
 
-[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.1...HEAD
+[Unreleased]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.3.0...HEAD
+[1.3.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/s3rgiosan/wp-theme-json-editor/compare/1.0.0...1.1.0
